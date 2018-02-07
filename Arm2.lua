@@ -65,8 +65,15 @@ function createMainUI()
 end
 
 function createFileUI()
-	simExtCustomUI_hide(mainUI)
-	xml= '<ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyActionUI">'..controller..[[
+	simExtCustomUI_hide(mainUI_index)
+	currentActionIndex = 1 --指向当前一个action的位置
+	action = {} --每个action都存储每个关节的角度值
+	action[currentActionIndex] = {}
+	PATH = ""
+	for i = 1, jointNum, 1 do
+		action[currentActionIndex][i] = 0 --初始状态为默认状态{0,0,...,0}
+	end
+	xml= '<ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyCreatFileUI">'..controller..[[
 		<group>
 			<label style="* {font-size: 20px;}" text="Operation"/>
 			<group layout="hbox">
@@ -84,19 +91,22 @@ function createFileUI()
 end
 
 function loadFileUI()
-	simExtCustomUI_hide(mainUI)
+	simExtCustomUI_hide(mainUI_index)
+	action = {} --从文件读出来的角度
+	actionCount = 0 --从文件中读到的Action数
+	currentActionIndex = 1 --当前仿真的action下标
 	xml= '<ui title="Load File" closeable="true" resizeable="false" activate="false" onclose="destroyLoadFileUI">'..[[
 		<group>
 			<label style="* {font-size: 20px;}" text="Gesture Mode"/>
 	        <group layout="vbox">
 				<group layout="hbox">
-					<label style="* {font-size: 15px;}" text="ReadFile(.txt)"/>
-					<combobox id="41"></combobox>
+					<label style="* {font-size: 15px; width: 100px;}" text="ReadFile(.txt)"/>
+					<combobox id="41" onchange="selectFile"></combobox>
 				</group>
 				<group layout="hbox">
 					<button text="Open" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="openFile" id="124"/>
 					<button text="Simulation" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSimulate" id="125"/>
-					<button text="simulation" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionEdit" id="126"/>
+					<button text="Edit" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="editFileUI" id="126"/>
 				</group>
 			</group>
 		</group>
@@ -105,28 +115,64 @@ function loadFileUI()
 	loadFileUI_index = simExtCustomUI_create(xml)
 end
 
-function destroyActionUI()
+function editFileUI()
+	if PATH == nil then
+		return
+	end
+	actionRead(PATH)
+	simExtCustomUI_hide(loadFileUI_index)
+	currentActionIndex = actionCount --指向当前一个action的位置
+	xml= string.format('<ui title="%s" closeable="true" resizeable="false" activate="false" onclose="destroyEditFileUI">',ReadFile)..controller..[[
+		<group>
+			<label style="* {font-size: 20px;}" text="Operation"/>
+			<group layout="hbox">]]..
+				string.format('<label style="* {font-size: 15px;}" text="Action: %d times" id="41"/>', actionCount)..[[
+				<button text="Confirm" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
+				<button text="Undo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="121"/>
+				<button text="Redo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="122"/>
+				<button text="Save" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSave" id="123"/>
+			</group>
+		</group>
+	</ui>
+	]]
+	editFileUI_index = simExtCustomUI_create(xml) -- file-edit UI
+	for i = 1, jointNum, 1 do
+		currentJointAngle[i] = action[currentActionIndex][i]
+		simSetJointPosition(jointHandle[i], currentJointAngle[i]*math.pi/180)
+		simExtCustomUI_setSpinboxValue(editFileUI_index, i, currentJointAngle[i]) --关联spinbox的变化
+		simExtCustomUI_setSliderValue(editFileUI_index, i + 20, currentJointAngle[i]) --关联slider的变化
+	end
+end
+
+function destroyCreatFileUI()
     -- body
+	reset(createFileUI_index)
 	simExtCustomUI_destroy(createFileUI_index)
-	simExtCustomUI_show(mainUI)
+	simExtCustomUI_show(mainUI_index)
 end
 
 function destroyLoadFileUI()
     -- body
 	simExtCustomUI_destroy(loadFileUI_index)
-	simExtCustomUI_show(mainUI)
+	simExtCustomUI_show(mainUI_index)
 end
 
-function spinboxChange(uiHandle, id, newValue) --响应spinbox的变化
+function destroyEditFileUI()
+	reset(editFileUI_index)
+	simExtCustomUI_destroy(editFileUI_index)
+	simExtCustomUI_show(loadFileUI_index)
+end
+
+function spinboxChange(ui, id, newValue) --响应spinbox的变化
 	changedJoint = id --slider的id在1-20之间
     setValues(newValue, "single", changedJoint)
-	simExtCustomUI_setSliderValue(createFileUI_index, id + 20, newValue) --关联slider的变化
+	simExtCustomUI_setSliderValue(ui, id + 20, newValue) --关联slider的变化
 end
 
-function sliderChange(uiHandle, id, newValue) ----响应slider的变化
+function sliderChange(ui, id, newValue) ----响应slider的变化
 	changedJoint = id - 20 --slider的id在21-40之间
     setValues(newValue, "single", changedJoint)
-	simExtCustomUI_setSpinboxValue(createFileUI_index, id - 20, newValue) --关联spinbox的变化
+	simExtCustomUI_setSpinboxValue(ui, id - 20, newValue) --关联spinbox的变化
 end
 
 function setValues(newAngles, changedNum, changedJoint) --调整关节位置
@@ -154,41 +200,41 @@ function actionOperate(ui,id)
     if(id == 120) then --confirm operation
 		notChange = true
 		for i = 1, jointNum, 1 do
-			if action[ActionNum][i] ~= currentJointAngle[i] then
+			if action[currentActionIndex][i] ~= currentJointAngle[i] then
 				notChange = false
 				break
 			end
 		end
 		if notChange == false then
-			ActionNum = ActionNum + 1
-			action[ActionNum] = {}
+			currentActionIndex = currentActionIndex + 1
+			action[currentActionIndex] = {}
 			for i=1, jointNum, 1 do
-				action[ActionNum][i] = currentJointAngle[i]
+				action[currentActionIndex][i] = currentJointAngle[i]
 			end
-			finalActionPoint = ActionNum
+			finalActionIndex = currentActionIndex
 		end
-    elseif(id == 121) then
-		if(ActionNum > 1) then
-			ActionNum = ActionNum - 1
-			setValues(action[ActionNum])
+    elseif(id == 121) then --undo operation
+		if(currentActionIndex > 1) then
+			currentActionIndex = currentActionIndex - 1
+			setValues(action[currentActionIndex])
 			for i = 1, jointNum, 1 do
-				simExtCustomUI_setSpinboxValue(ui, i, action[ActionNum][i]) --关联spinbox的变化
-				simExtCustomUI_setSliderValue(ui, i + 20, action[ActionNum][i]) --关联slider的变化
+				simExtCustomUI_setSpinboxValue(ui, i, action[currentActionIndex][i]) --关联spinbox的变化
+				simExtCustomUI_setSliderValue(ui, i + 20, action[currentActionIndex][i]) --关联slider的变化
 			end
 		end
-    elseif(id == 122) then
-		if ActionNum < finalActionPoint then
-			ActionNum = ActionNum + 1
-			setValues(action[ActionNum])
+    elseif(id == 122) then --redo operation
+		if currentActionIndex < finalActionIndex then
+			currentActionIndex = currentActionIndex + 1
+			setValues(action[currentActionIndex])
 			for i = 1, jointNum, 1 do
-				simExtCustomUI_setSpinboxValue(ui, i, action[ActionNum][i]) --关联spinbox的变化
-				simExtCustomUI_setSliderValue(ui, i + 20, action[ActionNum][i]) --关联slider的变化
+				simExtCustomUI_setSpinboxValue(ui, i, action[currentActionIndex][i]) --关联spinbox的变化
+				simExtCustomUI_setSliderValue(ui, i + 20, action[currentActionIndex][i]) --关联slider的变化
 			end
 		end
     end
 	
 	--输出缓存区信息
-	for i=1, ActionNum, 1 do
+	for i=1, currentActionIndex, 1 do
 		local s = ""
 		for j=1, jointNum, 1 do
 			s = s.." "
@@ -198,15 +244,19 @@ function actionOperate(ui,id)
 	end
 	print("-------------------------------")
 	
-    simExtCustomUI_setLabelText(createFileUI_index,41,"Action: "..tostring(ActionNum).."times")
+    simExtCustomUI_setLabelText(ui,41,"Action: "..tostring(currentActionIndex).."times")
 end
 
 function actionSave()
     -- body
-    PATH = simFileDialog(sim_filedlg_type_save,"SAVE","","","text file","txt")
-	if PATH ~= "" then
+	if PATH == "" then
+		PATH = simFileDialog(sim_filedlg_type_save,"SAVE","","","text file","txt")
+	end
+	print(PATH)
+	print("currentActionIndex", currentActionIndex)
+	if PATH ~= nil then
 	    file = io.open(PATH, "w")
-		for i=1, ActionNum, 1 do
+		for i=1, currentActionIndex, 1 do
 			local s = ""
 			for j=1, jointNum, 1 do
 				s = s..action[i][j]
@@ -217,82 +267,81 @@ function actionSave()
 		end
 		io.close(file)
 	end
+	print("save success")
+end
+
+function actionRead(ReadFile)
+	print(ReadFile)
+	actionCount = 0
+	for line in io.lines(ReadFile) do
+		actionCount = actionCount + 1
+		action[actionCount] = {}
+		for w in string.gmatch(line, "%S+") do
+			table.insert(action[actionCount],tonumber(w))
+		end
+	end
 end
 
 function openFile()
     -- body
     PATH=simFileDialog(sim_filedlg_type_load,"Search","","","text file","txt")
-    print(PATH)
     if(PATH ~= nil) then
-        local ItemNum = simExtCustomUI_getComboboxItemCount(loadFileUI_index,41)
-        print(ItemNum)
-        for i=ItemNum,0,-1 do
-            simExtCustomUI_removeComboboxItem(loadFileUI_index,41,i)
-        end   
-        simExtCustomUI_insertComboboxItem(loadFileUI_index,41,1,PATH)
-        ReadFile = PATH
+        simExtCustomUI_insertComboboxItem(loadFileUI_index,41,0,PATH) 
+		ReadFile = simExtCustomUI_getComboboxItemText(loadFileUI_index,41,0)
+		actionRead(ReadFile)
     end
+end
+
+function selectFile(ui, id, selected)
+	ReadFile = simExtCustomUI_getComboboxItemText(loadFileUI_index,41,selected)
+	actionRead(ReadFile)
 end
 
 function actionSimulate()
     -- body
-	ActionCount = 0
-	ActionIndex = 0
-	for line in io.lines(ReadFile) do
-		ActionCount = ActionCount + 1
-		ActionAngle[ActionCount] = {}
-		for w in string.gmatch(line, "%S+") do
-			table.insert(ActionAngle[ActionCount],tonumber(w))
+	currentActionIndex = 1 --当前仿真的action下标
+	actionSim = true
+end
+
+function delay(n)
+	for i = 1, n, 1 do
+		for j = 1, n, 1 do
+		
 		end
 	end
-	actionSim = true
 end
 
 if (sim_call_type==sim_childscriptcall_initialization) then
 	createFileUI_index = 0 --file-creation UI id
 	loadFileUI_index = 0 --file-load UI id
+	editFileUI_index = 0 --file-edit UI id
 	jointNum = 8 --定义关节数
-	ActionNum = 1 --执行action的数量
+	
 	currentJointAngle = {} --存储当前各个关节的角度值
-	finalActionPoint = ActionNum --指向最后一个action的位置
-	
+	finalActionIndex = currentActionIndex --指向最后一个action的位置
+	currentActionIndex = 1 --指向当前一个action的位置
 	action = {} --每个action都存储每个关节的角度值
-	action[ActionNum] = {}
-	ActionAngle = {} --改
-	next_action_time = 0 --改
-	for i = 1, jointNum, 1 do
-		action[ActionNum][i] = 0 --初始状态为默认状态{0,0,...,0}
-	end
+	actionCount = 0 --从文件中读到的Action数
+	PATH = "" --文件的路径
+	mainUI_index = simExtCustomUI_create(createMainUI()) -- creat User Interface
 	
-	mainUI = simExtCustomUI_create(createMainUI()) -- creat User Interface
 	jointHandle={} --获取每个关节的handle
 	for i = 1, jointNum, 1 do
 		jointHandle[i] = simGetObjectHandle('joint'..(i)) -- robot arm
-	end
+	end 
 end
 
 
 if (sim_call_type==sim_childscriptcall_actuation) then --只有变化的时候才会触发这个线程
 	if actionSim then
-        if simGetSimulationTime() > next_action_time then 
-            ActionIndex = ActionIndex + 1
-            if ActionIndex > ActionCount then
-                ActionIndex = ActionCount
-                actionSim = false
-            else
-                max_angle_diff = 0
-                for i=1, jointNum, 1 do
-                    ASdiff = math.abs(jointHandle[i] - ActionAngle[ActionIndex][i])
-                    if ASdiff > max_angle_diff then
-                        max_angle_diff = ASdiff
-                    end
-                end
-                interval = max_angle_diff / 10            --改
-                joint_command = ActionAngle[ActionIndex]
-                setValues(joint_command)                 --改
-                next_action_time = simGetSimulationTime() + interval
-			end
+		joint_command = action[currentActionIndex]
+		currentActionIndex = currentActionIndex + 1
+		if currentActionIndex > actionCount then
+			currentActionIndex = actionCount
+			actionSim = false
 		end
+		setValues(joint_command)         
+		delay(2000)
 	end
 end
 
@@ -308,6 +357,5 @@ if (sim_call_type==sim_childscriptcall_cleanup) then
 
     -- Following not really needed in a simulation script (i.e. automatically shut down at simulation end):
 	
-
 end
 
