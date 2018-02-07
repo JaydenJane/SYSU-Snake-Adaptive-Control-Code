@@ -47,6 +47,10 @@ controller = [[
 				</group>
 			</group>
 		</group>
+		<group layout="hbox">
+			<label text="Residence time(s): " style="* {qproperty-alignment: AlignCenter}" />
+			<spinbox text = '0' minimum="0" maximum="9000" onchange="spinboxChange" id="10"/>
+		</group>
 		<button text="ALL JOINTS RESET" style="* {font-size: 15px; padding: 5px}" onclick="reset" id="101"/>
 	</group>
 ]]
@@ -69,8 +73,9 @@ function createFileUI()
 	currentActionIndex = 1 --指向当前一个action的位置
 	action = {} --每个action都存储每个关节的角度值
 	action[currentActionIndex] = {}
+	ResidenceTime = 0; --停留时间
 	PATH = ""
-	for i = 1, jointNum, 1 do
+	for i = 1, jointNum+1, 1 do
 		action[currentActionIndex][i] = 0 --初始状态为默认状态{0,0,...,0}
 	end
 	xml= '<ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyCreatFileUI">'..controller..[[
@@ -164,9 +169,13 @@ function destroyEditFileUI()
 end
 
 function spinboxChange(ui, id, newValue) --响应spinbox的变化
-	changedJoint = id --slider的id在1-20之间
-    setValues(newValue, "single", changedJoint)
-	simExtCustomUI_setSliderValue(ui, id + 20, newValue) --关联slider的变化
+	if(id == 10) then
+		ResidenceTime = newValue
+	else			
+		changedJoint = id --slider的id在1-20之间
+	    setValues(newValue, "single", changedJoint)
+		simExtCustomUI_setSliderValue(ui, id + 20, newValue) --关联slider的变化
+	end
 end
 
 function sliderChange(ui, id, newValue) ----响应slider的变化
@@ -211,6 +220,7 @@ function actionOperate(ui,id)
 			for i=1, jointNum, 1 do
 				action[currentActionIndex][i] = currentJointAngle[i]
 			end
+			action[currentActionIndex][jointNum+1] = ResidenceTime --停留时间保留
 			finalActionIndex = currentActionIndex
 		end
     elseif(id == 121) then --undo operation
@@ -240,7 +250,7 @@ function actionOperate(ui,id)
 			s = s.." "
 			s = s..action[i][j]
 		end
-		print(s)
+		print(s.."\nResidenceTime:"..action[i][jointNum+1])
 	end
 	print("-------------------------------")
 	
@@ -262,7 +272,7 @@ function actionSave()
 				s = s..action[i][j]
 				s = s.." "
 			end
-			s = s.."\n"
+			s = s..action[i][jointNum+1].."\n"
 			file:write(s)
 		end
 		io.close(file)
@@ -329,19 +339,29 @@ if (sim_call_type==sim_childscriptcall_initialization) then
 	for i = 1, jointNum, 1 do
 		jointHandle[i] = simGetObjectHandle('joint'..(i)) -- robot arm
 	end 
+
+	next_action_time = 0
 end
 
 
 if (sim_call_type==sim_childscriptcall_actuation) then --只有变化的时候才会触发这个线程
 	if actionSim then
-		joint_command = action[currentActionIndex]
-		currentActionIndex = currentActionIndex + 1
-		if currentActionIndex > actionCount then
-			currentActionIndex = actionCount
-			actionSim = false
+		if(simGetSimulationTime() > next_action_time) then
+			if currentActionIndex > actionCount then
+				currentActionIndex = actionCount
+				actionSim = false
+			else
+				joint_command = action[currentActionIndex]
+				print(currentActionIndex)
+				setValues(joint_command)
+				start = simGetSimulationTime()
+				print("starttime:"..start)
+				next_action_time = start + action[currentActionIndex][jointNum+1]+2
+				print("period:"..action[currentActionIndex][jointNum+1])
+				print("next_action_time:"..next_action_time)
+				currentActionIndex = currentActionIndex + 1
+			end
 		end
-		setValues(joint_command)         
-		delay(2000)
 	end
 end
 
