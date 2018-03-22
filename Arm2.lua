@@ -373,6 +373,7 @@ end
 
 function selectFile(ui, id, selected)
 	ReadFile = simExtCustomUI_getComboboxItemText(loadFileUI_index,41,selected)
+	PATH = ReadFile
 	actionRead(ReadFile)
 end
 
