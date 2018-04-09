@@ -47,6 +47,10 @@ controller = [[
 				</group>
 			</group>
 		</group>
+		<group layout="hbox">
+			<label text="Residence time( 100 ms ): " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+			<spinbox style="* {qproperty-alignment: AlignCenter; font-size: 20px}" text = '0' minimum="0" maximum="900000" onchange="spinboxChange" id="10"/>
+		</group>
 		<button text="ALL JOINTS RESET" style="* {font-size: 15px; padding: 5px}" onclick="reset" id="101"/>
 	</group>
 ]]
@@ -69,24 +73,32 @@ function createFileUI()
 	currentActionIndex = 1 --??????action???
 	action = {} --??action???????????
 	action[currentActionIndex] = {}
+	ResidenceTime = 0; --????
 	PATH = ""
-	for i = 1, jointNum, 1 do
+	for i = 1, jointNum+1, 1 do
 		action[currentActionIndex][i] = 0 --?????????{0,0,...,0}
 	end
-	xml= '<ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyCreatFileUI">'..controller..[[
+	xml= [[
+	<ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyCreatFileUI">
 		<group>
-			<label style="* {font-size: 20px;}" text="Operation"/>
+			<label style="* {font-size: 25px;}" text="Actions Design"/>
 			<group layout="hbox">
-				<label style="* {font-size: 15px;}" text="Action: 1 times" id="41"/>
-				<button text="Confirm" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
-				<button text="Undo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="121"/>
-				<button text="Redo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="122"/>
-				<button text="Save" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSave" id="123"/>
+				<label style="* {font-size: 20px; max-width: 100px}" text="Action: 1" id="41"/>
+				<group layout="vbox">
+					<group layout="hbox">
+						<button text="Confirm" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
+						<button text="Undo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="121"/>
+						<button text="Redo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="122"/>
+					</group>
+					<button text="Save" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSave" id="123"/>
+				</group>
 			</group>
-		</group>
+		</group>]] ..controller.. [[
 	</ui>
 	]]
 	createFileUI_index = simExtCustomUI_create(xml) -- file-creation UI
+	simExtCustomUI_setEnabled(createFileUI_index, 121, false, true)
+	simExtCustomUI_setEnabled(createFileUI_index, 122, false, true)
 	reset(createFileUI_index)
 end
 
@@ -97,14 +109,15 @@ function loadFileUI()
 	currentActionIndex = 1 --?????action??
 	xml= '<ui title="Load File" closeable="true" resizeable="false" activate="false" onclose="destroyLoadFileUI">'..[[
 		<group>
-			<label style="* {font-size: 20px;}" text="Gesture Mode"/>
+			<label style="* {font-size: 20px;}" text="LoadFile"/>
 	        <group layout="vbox">
 				<group layout="hbox">
-					<label style="* {font-size: 15px; width: 100px;}" text="ReadFile(.txt)"/>
+					<label style="* {font-size: 15px; width: 100px;}" text="OpenFile(.txt)"/>
 					<combobox id="41" onchange="selectFile"></combobox>
+					<button text="Browser" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="browseFile" id="124"/>
 				</group>
 				<group layout="hbox">
-					<button text="Open" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="openFile" id="124"/>
+					<button text="Open" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="openFile" id="127"/>
 					<button text="Simulation" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSimulate" id="125"/>
 					<button text="Edit" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="editFileUI" id="126"/>
 				</group>
@@ -113,6 +126,12 @@ function loadFileUI()
 	</ui>
 	]]
 	loadFileUI_index = simExtCustomUI_create(xml)
+	simExtCustomUI_setComboboxItems(loadFileUI_index, 41, loadFilehistory, 0, true)
+	if simExtCustomUI_getComboboxItemCount(loadFileUI_index, 41) == 0 then
+		simExtCustomUI_setEnabled(loadFileUI_index, 127, false, true)
+		simExtCustomUI_setEnabled(loadFileUI_index, 126, false, true)
+		simExtCustomUI_setEnabled(loadFileUI_index, 125, false, true)
+	end
 end
 
 function editFileUI()
@@ -122,17 +141,22 @@ function editFileUI()
 	actionRead(PATH)
 	simExtCustomUI_hide(loadFileUI_index)
 	currentActionIndex = actionCount --??????action???
-	xml= string.format('<ui title="%s" closeable="true" resizeable="false" activate="false" onclose="destroyEditFileUI">',ReadFile)..controller..[[
+	finalActionIndex = actionCount
+	xml= string.format('<ui title="%s" closeable="true" resizeable="false" activate="false" onclose="destroyEditFileUI">',ReadFile)..[[
 		<group>
 			<label style="* {font-size: 20px;}" text="Operation"/>
 			<group layout="hbox">]]..
-				string.format('<label style="* {font-size: 15px;}" text="Action: %d times" id="41"/>', actionCount)..[[
-				<button text="Confirm" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
-				<button text="Undo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="121"/>
-				<button text="Redo" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="122"/>
-				<button text="Save" style="* {font-size: 15px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSave" id="123"/>
+				string.format('<label style="* {font-size: 20px;max-width: 100px;}" text="Action: %d" id="41" />', actionCount)..[[
+				<group layout="vbox">
+					<group layout="hbox">
+						<button text="Confirm" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
+						<button text="Undo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="121"/>
+						<button text="Redo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="122"/>
+					</group>
+					<button text="Save" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionSave" id="123"/>
+				</group>
 			</group>
-		</group>
+		</group>]]..controller..[[
 	</ui>
 	]]
 	editFileUI_index = simExtCustomUI_create(xml) -- file-edit UI
@@ -142,6 +166,9 @@ function editFileUI()
 		simExtCustomUI_setSpinboxValue(editFileUI_index, i, currentJointAngle[i]) --??spinbox???
 		simExtCustomUI_setSliderValue(editFileUI_index, i + 20, currentJointAngle[i]) --??slider???
 	end
+	simExtCustomUI_setSpinboxValue(editFileUI_index,10,action[currentActionIndex][jointNum+1])
+	simExtCustomUI_setEnabled(editFileUI_index, 121, true, true)
+	simExtCustomUI_setEnabled(editFileUI_index, 122, false, true)
 end
 
 function destroyCreatFileUI()
@@ -164,9 +191,13 @@ function destroyEditFileUI()
 end
 
 function spinboxChange(ui, id, newValue) --??spinbox???
-	changedJoint = id --slider?id?1-20??
-    setValues(newValue, "single", changedJoint)
-	simExtCustomUI_setSliderValue(ui, id + 20, newValue) --??slider???
+	if(id == 10) then
+		ResidenceTime = newValue
+	else			
+		changedJoint = id --slider?id?1-20??
+	    setValues(newValue, "single", changedJoint)
+		simExtCustomUI_setSliderValue(ui, id + 20, newValue) --??slider???
+	end
 end
 
 function sliderChange(ui, id, newValue) ----??slider???
@@ -211,25 +242,43 @@ function actionOperate(ui,id)
 			for i=1, jointNum, 1 do
 				action[currentActionIndex][i] = currentJointAngle[i]
 			end
+			action[currentActionIndex][jointNum+1] = ResidenceTime --??????
 			finalActionIndex = currentActionIndex
+		end
+		if(currentActionIndex > 1) then
+			simExtCustomUI_setEnabled(ui,121,true,true)
+		else
+			simExtCustomUI_setEnabled(ui,121,false,true)
 		end
     elseif(id == 121) then --undo operation
 		if(currentActionIndex > 1) then
+			simExtCustomUI_setEnabled(ui,121,true,true)
+			simExtCustomUI_setEnabled(ui,122,true,true)
 			currentActionIndex = currentActionIndex - 1
 			setValues(action[currentActionIndex])
 			for i = 1, jointNum, 1 do
 				simExtCustomUI_setSpinboxValue(ui, i, action[currentActionIndex][i]) --??spinbox???
 				simExtCustomUI_setSliderValue(ui, i + 20, action[currentActionIndex][i]) --??slider???
 			end
+			simExtCustomUI_setSpinboxValue(ui,10,action[currentActionIndex][jointNum+1])
+		end
+		if(currentActionIndex == 1) then
+			simExtCustomUI_setEnabled(ui,121,false,true)
 		end
     elseif(id == 122) then --redo operation
 		if currentActionIndex < finalActionIndex then
+			simExtCustomUI_setEnabled(ui,121,true,true)
+			simExtCustomUI_setEnabled(ui,122,true,true)
 			currentActionIndex = currentActionIndex + 1
 			setValues(action[currentActionIndex])
 			for i = 1, jointNum, 1 do
 				simExtCustomUI_setSpinboxValue(ui, i, action[currentActionIndex][i]) --??spinbox???
 				simExtCustomUI_setSliderValue(ui, i + 20, action[currentActionIndex][i]) --??slider???
 			end
+			simExtCustomUI_setSpinboxValue(ui,10,action[currentActionIndex][jointNum+1])
+		end
+		if currentActionIndex == finalActionIndex then
+			simExtCustomUI_setEnabled(ui,122,false,true)
 		end
     end
 	
@@ -240,11 +289,11 @@ function actionOperate(ui,id)
 			s = s.." "
 			s = s..action[i][j]
 		end
-		print(s)
+		print(s.."\nResidenceTime:"..action[i][jointNum+1])
 	end
 	print("-------------------------------")
 	
-    simExtCustomUI_setLabelText(ui,41,"Action: "..tostring(currentActionIndex).."times")
+    simExtCustomUI_setLabelText(ui,41,"Action: "..tostring(currentActionIndex))
 end
 
 function actionSave()
@@ -262,34 +311,64 @@ function actionSave()
 				s = s..action[i][j]
 				s = s.." "
 			end
-			s = s.."\n"
+			s = s..action[i][jointNum+1].."\n"
 			file:write(s)
 		end
 		io.close(file)
+		print("SAVE SUCCESS!")
+	else
+		print("SAVE Failed!")
 	end
-	print("save success")
 end
 
 function actionRead(ReadFile)
 	print(ReadFile)
 	actionCount = 0
+	fileContents = ""
 	for line in io.lines(ReadFile) do
 		actionCount = actionCount + 1
 		action[actionCount] = {}
-		for w in string.gmatch(line, "%S+") do
+		for w in string.gmatch(line, "%S+") do --????
 			table.insert(action[actionCount],tonumber(w))
 		end
+		fileContents = fileContents..line.."\n"
+	end
+	if checkDataFormat() == false then
+		openFile()
+	end
+end
+
+function browseFile()
+    -- body
+    PATH=simFileDialog(sim_filedlg_type_load,"Search","","","text file","txt")
+	loadFilehistory[loadFileNum] = PATH
+    loadFileNum = loadFileNum + 1
+    if(PATH ~= nil) then
+        simExtCustomUI_insertComboboxItem(loadFileUI_index,41,0,PATH) -- insert in the first position
+		ReadFile = simExtCustomUI_getComboboxItemText(loadFileUI_index,41,0) -- default reading
+		actionRead(ReadFile)
+    else
+		print("Cancel!")
+	end
+	if simExtCustomUI_getComboboxItemCount(loadFileUI_index, 41) ~= 0 then
+		simExtCustomUI_setEnabled(loadFileUI_index, 127, true, true)
 	end
 end
 
 function openFile()
-    -- body
-    PATH=simFileDialog(sim_filedlg_type_load,"Search","","","text file","txt")
-    if(PATH ~= nil) then
-        simExtCustomUI_insertComboboxItem(loadFileUI_index,41,0,PATH) 
-		ReadFile = simExtCustomUI_getComboboxItemText(loadFileUI_index,41,0)
-		actionRead(ReadFile)
-    end
+	xml='<ui title="Scan File" closeable="true" resizeable="false" activate="false">'..[[
+		<group layout="vbox">
+			<label enabled="true" style="* {min-width: 360px; height: 500px}" id="128" />
+		</group>
+	</ui>
+	]]
+	scanFileUI_index = simExtCustomUI_create(xml)
+	if checkDataFormat() then
+		labelContents = fileContents .. "\n Data format Correct!"
+	else
+		labelContents = fileContents .. "\n Data format Error!"
+	end
+	simExtCustomUI_setLabelText(scanFileUI_index, 128, labelContents, true)
 end
 
 function selectFile(ui, id, selected)
@@ -303,19 +382,50 @@ function actionSimulate()
 	actionSim = true
 end
 
-function delay(n)
-	for i = 1, n, 1 do
-		for j = 1, n, 1 do
-		
+
+function checkDataFormat()
+	simExtCustomUI_setEnabled(loadFileUI_index, 126, false, true)
+	simExtCustomUI_setEnabled(loadFileUI_index, 125, false, true)
+	currentLine = 1
+	nextLine = 1
+	while nextLine ~= nil do
+		nextLine = string.find(fileContents, "\n", currentLine) 
+		if nextLine == nil then 
+			break
 		end
+		--print("nextLine: ", nextLine)
+		subs = string.sub(fileContents, currentLine, nextLine)
+		--print("subs: ", subs)
+		dataCnt = 0
+		for value in string.gmatch(subs, "%S+") do --check what?
+			if tonumber(value) < -90 and tonumber(value) > 90 and datacnt < 8 then
+				print("Data overflow error!")
+				return false
+			end
+			dataCnt = dataCnt + 1
+		end
+		--print("dataCnt: ", dataCnt)
+		if dataCnt ~= 9 and dataCnt ~= 0 then 
+			print("Data format error!")
+			return false
+		end
+		currentLine = nextLine + 1
+		--print("currentLine: ", currentLine)
 	end
+	print("Data format correct!")
+	simExtCustomUI_setEnabled(loadFileUI_index, 126, true, true)
+	simExtCustomUI_setEnabled(loadFileUI_index, 125, true, true)
+	return true
 end
 
 if (sim_call_type==sim_childscriptcall_initialization) then
 	createFileUI_index = 0 --file-creation UI id
 	loadFileUI_index = 0 --file-load UI id
 	editFileUI_index = 0 --file-edit UI id
+	scanFileUI_index = 0 --file-scan UI id
 	jointNum = 8 --?????
+	loadFileNum = 1
+	loadFilehistory = {}
 	
 	currentJointAngle = {} --????????????
 	finalActionIndex = currentActionIndex --??????action???
@@ -323,7 +433,7 @@ if (sim_call_type==sim_childscriptcall_initialization) then
 	action = {} --??action???????????
 	actionCount = 0 --???????Action?
 	PATH = "" --?????
-	mainUI_index = simExtCustomUI_create(createMainUI()) -- creat User Interface
+	mainUI_index = simExtCustomUI_create(createMainUI()) -- create User Interface
 	
 	jointHandle={} --???????handle
 	for i = 1, jointNum, 1 do
@@ -334,7 +444,7 @@ if (sim_call_type==sim_childscriptcall_initialization) then
     actionDuration = 0
     isPerformingAction = false
 
-Joints_handle={-1,-1,-1,-1, -1,-1,-1,-1}
+	Joints_handle={-1,-1,-1,-1, -1,-1,-1,-1}
  
     for i=1,8,1 do
         Joints_handle[i]=simGetObjectHandle('joint'..(i)) -- robot arm
@@ -361,11 +471,16 @@ Joints_handle={-1,-1,-1,-1, -1,-1,-1,-1}
 end
 
 
+
+
 if (sim_call_type==sim_childscriptcall_actuation) then --???????????????
      if isPerformingAction then
         if (simGetSimulationTime () - actionStartTime)*10 > actionDuration then
             isPerformingAction = false
         end
+		
+		
+		
 
      end 
 
@@ -379,7 +494,7 @@ if (sim_call_type==sim_childscriptcall_actuation) then --???????????????
             end
             setValues(joint_command)  
             actionStartTime = simGetSimulationTime () 
-            actionDuration = joint_command[jointNum+1]
+            actionDuration = joint_command[jointNum + 1]
             isPerformingAction = true
             joint_position = {0, 0, 0, 0, 0, 0, 0, 0}
             ceil = {0, 0, 0, 0, 0, 0, 0, 0}
@@ -416,4 +531,3 @@ if (sim_call_type==sim_childscriptcall_cleanup) then
     end
 	
 end
-
