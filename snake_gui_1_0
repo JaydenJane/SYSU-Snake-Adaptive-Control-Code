@@ -21,50 +21,48 @@ function clone( object )
 end
 
 controller = [[
-  <group>
-    <label style="* {font-size: 20px;}" text="Robot controller"/>
     <group layout="hbox">
       <group>
         <group layout="hbox">
-          <label text="Joint_8: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '8' minimum="-90" maximum="90" onchange="spinboxChange" id="8"/>
+          <label text="8: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '8' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="8"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="28"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_7: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '7' minimum="-90" maximum="90" onchange="spinboxChange" id="7"/>
+          <label text="7: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '7' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="7"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="27"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_6: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '6' minimum="-90" maximum="90" onchange="spinboxChange" id="6"/>
+          <label text="6: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '6' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="6"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="26"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_5: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '5' minimum="-90" maximum="90" onchange="spinboxChange" id="5"/>
+          <label text="5: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '5' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="5"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="25"/>
         </group>
       </group>
       <group>
         <group layout="hbox">
-          <label text="Joint_4: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '4' minimum="-90" maximum="90" onchange="spinboxChange" id="4"/>
+          <label text="4: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '4' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="4"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="24"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_3: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '3' minimum="-90" maximum="90" onchange="spinboxChange" id="3"/>
+          <label text="3: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '3' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="3"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="23"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_2: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '2' minimum="-90" maximum="90" onchange="spinboxChange" id="2"/>
+          <label text="2: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '2' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="2"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="22"/>
         </group>
         <group layout="hbox">
-          <label text="Joint_1: " style="* {qproperty-alignment: AlignCenter}" />
-          <spinbox text = '1' minimum="-90" maximum="90" onchange="spinboxChange" id="1"/>
+          <label text="1: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
+          <spinbox text = '1' minimum="-90" maximum="90" onchange="spinboxChange" style="* {font-size: 20px}" id="1"/>
           <hslider style="* {min-width: 200px; margin-top: 10px}" minimum="-90" maximum="90" onchange="sliderChange" id="21"/>
         </group>
       </group>
@@ -74,7 +72,6 @@ controller = [[
       <spinbox style="* {qproperty-alignment: AlignCenter; font-size: 20px}" minimum="0" maximum="900000" onchange="spinboxChange" id="10"/>
     </group>
     <button text="ALL JOINTS RESET" style="* {font-size: 15px; padding: 5px}" onclick="reset" id="101"/>
-  </group>
 ]]
 
 function createMainUI()
@@ -104,11 +101,11 @@ function createFileUI()
   end
   actionHistoryIndex = 1
   actionHistory = {} --clear operation history
+  table.insert(actionHistory, actionHistoryIndex, clone(actionTable[currentActionIndex]))
 
   xml= [[
   <ui title="Control Panel" closeable="true" resizeable="false" activate="false" onclose="destroyCreatFileUI">
     <group>
-      <label style="* {font-size: 25px;}" text="Actions Design"/>
       <group layout="hbox">]]..
         string.format('<label style="* {font-size: 20px;max-width: 100px;}" text="Action: %d" id="41" />', actionCount)..[[
         <group layout="vbox">
@@ -196,7 +193,6 @@ function editFileUI()
   table.insert(actionHistory, clone(actionTable[currentActionIndex]))
   xml= string.format('<ui title="%s" closeable="true" resizeable="false" activate="false" onclose="destroyEditFileUI">',ReadFile)..[[
     <group>
-      <label style="* {font-size: 20px;}" text="Operation"/>
       <group layout="hbox">]]..
         string.format('<label style="* {font-size: 20px;max-width: 100px;}" text="Action: %d" id="41" />', actionCount)..[[
         <group layout="vbox">
@@ -226,6 +222,7 @@ function editFileUI()
     simExtCustomUI_setSliderValue(editFileUI_index, i + 20, currentJointAngle[i]) --set slider value
   end
   simExtCustomUI_setSpinboxValue(editFileUI_index,10,actionTable[currentActionIndex][jointNum+1]) --set the residence time
+  ResidenceTime = actionTable[currentActionIndex][jointNum+1]
   simExtCustomUI_setEnabled(editFileUI_index, 121, true, true) --enable previousAction button
   simExtCustomUI_setEnabled(editFileUI_index, 122, false, true) --unable nextAction button
   simExtCustomUI_setEnabled(editFileUI_index, 124, false, true) --unable undo button
@@ -291,12 +288,16 @@ end
 function actionOperate(ui,id)
   if(id == 120) then --confirm operation
     notChange = true
-    for i = 1, jointNum + 1, 1 do
+    for i = 1, jointNum, 1 do
       if actionTable[currentActionIndex][i] ~= currentJointAngle[i] then
         notChange = false
         break
       end
+      if(actionTable[currentActionIndex][jointNum+1] ~= ResidenceTime) then
+      	notChange = false
+      end
     end
+    print(notChange)
     if notChange == false then
       for i=1, jointNum, 1 do
         actionTable[currentActionIndex][i] = currentJointAngle[i]
@@ -340,6 +341,7 @@ function actionOperate(ui,id)
         simExtCustomUI_setSliderValue(ui, i + 20, actionTable[currentActionIndex][i]) --关联slider的变化
       end
       simExtCustomUI_setSpinboxValue(ui,10,actionTable[currentActionIndex][jointNum+1])
+      ResidenceTime = actionTable[currentActionIndex][jointNum+1]
       simExtCustomUI_setEnabled(ui,124,false,true)
       simExtCustomUI_setEnabled(ui,125,false,true)
     end
@@ -360,6 +362,7 @@ function actionOperate(ui,id)
         simExtCustomUI_setSliderValue(ui, i + 20, actionTable[currentActionIndex][i]) --关联slider的变化
       end
       simExtCustomUI_setSpinboxValue(ui,10,actionTable[currentActionIndex][jointNum+1])
+      ResidenceTime = actionTable[currentActionIndex][jointNum+1]
       simExtCustomUI_setEnabled(ui,124,false,true)
       simExtCustomUI_setEnabled(ui,125,false,true)
     end
@@ -379,6 +382,7 @@ function actionOperate(ui,id)
       simExtCustomUI_setSliderValue(ui, i + 20, actionHistory[actionHistoryIndex][i]) --关联slider的变化
     end
     simExtCustomUI_setSpinboxValue(ui,10,actionHistory[actionHistoryIndex][jointNum+1])
+    ResidenceTime = actionTable[currentActionIndex][jointNum+1]
   elseif(id == 125) then --redo operation
     simExtCustomUI_setEnabled(ui,124,true,true)
     if(actionHistoryIndex + 1 == table.maxn(actionHistory)) then
@@ -391,6 +395,7 @@ function actionOperate(ui,id)
       simExtCustomUI_setSliderValue(ui, i + 20, actionHistory[actionHistoryIndex][i]) --关联slider的变化
     end
     simExtCustomUI_setSpinboxValue(ui,10,actionHistory[actionHistoryIndex][jointNum+1])
+    ResidenceTime = actionTable[currentActionIndex][jointNum+1]
   elseif(id == 126) then --insertAction operation
   	actionHistoryIndex = 1
 	actionHistory = {} --clear operation history
@@ -406,6 +411,7 @@ function actionOperate(ui,id)
       simExtCustomUI_setSliderValue(ui, i + 20, actionTable[currentActionIndex][i]) --关联slider的变化
     end
     simExtCustomUI_setSpinboxValue(ui,10,actionTable[currentActionIndex][jointNum+1])
+    ResidenceTime = actionTable[currentActionIndex][jointNum+1]
    elseif(id == 127) then --deleteAction operation
    	table.remove(actionTable, currentActionIndex)
    	if(currentActionIndex > 1) then 
@@ -556,6 +562,8 @@ function actionSimulate(ui,id)
       currentJointAngle[i] = 0
       simSetJointPosition(jointHandle[i], 0)
     end
+    simExtCustomUI_setEnabled(loadFileUI_index, 54, false, true)
+    simExtCustomUI_setEnabled(loadFileUI_index, 56, false, true)
     currentActionIndex = 1
     actionSim = false
   end
@@ -602,6 +610,9 @@ if (sim_call_type==sim_childscriptcall_initialization) then
   editFileUI_index = 0 --file-edit UI id
   scanFileUI_index = 0 --file-scan UI id
   jointNum = 8
+  messageDeliver = true
+
+
   histroy = io.open("histroyPath.txt","a+")
   io.input(histroy)
   histroyFile = io.read()
@@ -684,7 +695,9 @@ if (sim_call_type==sim_childscriptcall_actuation) then --???????????????
             end
             -- publish joint positions
             if rosInterfacePresent then
-                simExtRosInterface_publish(publisher,{data=joint_position})
+            	if messageDeliver then
+                	simExtRosInterface_publish(publisher,{data=joint_position})
+                end
             end
     --delay(2000)
         end
