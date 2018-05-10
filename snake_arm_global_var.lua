@@ -2,6 +2,7 @@ createFileUI_index = 0 --file-creation UI id
 loadFileUI_index = 0 --file-load UI id
 editFileUI_index = 0 --file-edit UI id
 scanFileUI_index = 0 --file-scan UI id
+stateFileUI_index = 0 --file-state UI id
 jointNum = 8
 
 currentActionIndex = 1 --??????actionTable???

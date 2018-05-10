@@ -1,10 +1,6 @@
 angle_spinbox_render = [[
 	<group layout="vbox">
 		<group layout="hbox">
-			<button text="undo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="124"/>
-			<button text="redo" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="125"/>
-		</group>
-		<group layout="hbox">
 			<group layout="vbox">
 				<group layout="hbox">
 					<label text="8: " style="* {qproperty-alignment: AlignCenter; font-size: 20px}" />
@@ -76,14 +72,9 @@ action_edit_render = [[
 		        <label style="* {font-size: 20px;max-width: 100px;}" text="Action: " id="41" />
 		        <spinbox text = 'action' minimum="1" maximum="99" onchange="spinboxChange" style="* {font-size: 20px}" id="42"/>
 		    </group>
-		    <group layout="hbox">
-		        <button text="move" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="MoveArm" id="121"/>
-		        <button text="stop" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="StopArm" id="122"/>
-		    </group>
 	    </group>
         <group layout="vbox">
           <group layout="hbox">
-            <button text="confirm" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="120"/>
             <button text="insertAction" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="126"/>
             <button text="deleteAction" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="actionOperate" id="127"/>
           </group>
@@ -117,7 +108,12 @@ load_file_window_render = [[
     </group>
 	]]
 	
-  
+  state_file_xml = [[		    
+  			<group layout="hbox">
+		        <button text="move" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="MoveArm" id="121"/>
+		        <button text="stop" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="StopArm" id="122"/>
+		    </group>
+		    ]]
 
   
 

@@ -34,8 +34,6 @@ function createFileUI()
 
   createFileUI_index = simExtCustomUI_create(action_edit_from_createFile_xml) -- file-creation UI
   simExtCustomUI_setSpinboxValue(createFileUI_index, 42 , currentActionIndex)
-  simExtCustomUI_setEnabled(createFileUI_index, 124, false, true) --unable undo button
-  simExtCustomUI_setEnabled(createFileUI_index, 125, false, true) --unable redo button
   reset(createFileUI_index)
 end
 
@@ -87,8 +85,6 @@ function editFileUI()
   simExtCustomUI_setSpinboxValue(editFileUI_index,10,actionTable[currentActionIndex][jointNum+1]) --set the residence time
   simExtCustomUI_setSpinboxValue(editFileUI_index, 42 , currentActionIndex)
   ResidenceTime = actionTable[currentActionIndex][jointNum+1]
-  simExtCustomUI_setEnabled(editFileUI_index, 124, false, true) --unable undo button
-  simExtCustomUI_setEnabled(editFileUI_index, 125, false, true) --unable redo button
 end
 
 function destroyCreatFileUI()
