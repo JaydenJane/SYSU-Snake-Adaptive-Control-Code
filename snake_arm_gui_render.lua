@@ -108,7 +108,7 @@ load_file_window_render = [[
     </group>
 	]]
 	
-  state_file_xml = [[		    
+  state_file_window_render = [[		    
   			<group layout="hbox">
 		        <button text="move" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="MoveArm" id="121"/>
 		        <button text="stop" style="* {font-size: 20px;margin-left: 10px; margin-right: 10px; padding: 5px}" onclick="StopArm" id="122"/>

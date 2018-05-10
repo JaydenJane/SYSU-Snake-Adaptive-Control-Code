@@ -7,9 +7,12 @@ action_edit_from_createFile_xml = '<ui title="Control Panel" closeable="true" re
 
 load_file_xml= '<ui title="Load File" closeable="true" resizeable="false"'..
   'activate="false" onclose="destroyLoadFileUI">'.. load_file_window_render .. '</ui>'
+
+state_file_xml ='<ui title="Load File" closeable="true" resizeable="false " position="-50,50" placement="relative" '..
+  'activate="false" onclose="destroyLoadFileUI">'.. state_file_window_render .. '</ui>'
 	
 function action_edit_from_loadFile_xml(filename)
-	xml= string.format('<ui title="%s" closeable="true" resizeable="false"'..
+	xml= string.format('<ui title="%s" closeable="true" resizeable="false" '..
 '	activate="false" onclose="destroyEditFileUI">', filename) .. action_edit_render .. "</ui>" 
 	
 	return xml
